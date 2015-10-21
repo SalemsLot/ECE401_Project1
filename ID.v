@@ -34,6 +34,13 @@ module ID(
      input[31:0]WriteData1_IN,
      //Actually write to register file?
      input RegWrite1_IN,
+
+     //Forwarding
+     input [ 1:0] Fwd2Cmp_opA_ctl,
+     input [ 1:0] Fwd2Cmp_opB_ctl,
+     input [31:0] Fwd_EXEMEM,
+     input [31:0] Fwd_MEMWB,
+
      
      //Alternate PC for next fetch (branch/jump destination)
     output reg [31:0]Alt_PC,
@@ -74,7 +81,11 @@ module ID(
      //Tell the simulator to process a system call
      output reg SYS,
      //Tell fetch to stop advancing the PC, and wait.
-     output WANT_FREEZE
+     output WANT_FREEZE,
+
+     //ForwardLogic requires a stall.
+     input FWD_REQ_FREEZE
+
     );
      
      wire [5:0] ALU_control1;   //async. ALU_Control output
@@ -133,7 +144,7 @@ module ID(
     
     wire [31:0] rsval_jump1;
     
-    assign rsval_jump1 = rsRawVal1;
+    assign rsval_jump1 = Fwd2Cmp_opA_ctl == 2'bx1 ? Fwd_EXEMEM : Fwd2Cmp_opA_ctl == 2'b10 ? Fwd_MEMWB : rsRawVal1;
 
 NextInstructionCalculator NIA1 (
     .Instr_PC_Plus4(Instr_PC_Plus4_IN),
@@ -142,7 +153,9 @@ NextInstructionCalculator NIA1 (
     .JumpRegister(jumpRegister_Flag1), 
     .RegisterValue(rsval_jump1), 
     .NextInstructionAddress(Alt_PC1),
-     .Register(rs1)
+     .Register(rs1),
+//ADDED: make sure branch delay slot is executed when ForwardLogic requests a stall
+     .FWD_REQ_FREEZE(FWD_REQ_FREEZE)
     );
 
      wire [31:0]    signExtended_immediate1;
@@ -150,6 +163,8 @@ NextInstructionCalculator NIA1 (
      
      assign signExtended_immediate1 = {{16{immediate1[15]}},immediate1};
      assign zeroExtended_immediate1 = {{16{1'b0}},immediate1};
+
+
 
 compare branch_compare1 (
     .Jump(jump1), 
@@ -161,8 +176,9 @@ compare branch_compare1 (
 //End branch/jump calculation
 
 //Handle pipelining
-assign rsval1 = rsRawVal1;
-assign rtval1 = rtRawVal1;
+//ADDED Forwarding controls
+assign rsval1 = Fwd2Cmp_opA_ctl == 2'bx1 ? Fwd_EXEMEM : Fwd2Cmp_opA_ctl == 2'b10 ? Fwd_MEMWB : rsRawVal1;
+assign rtval1 = Fwd2Cmp_opB_ctl == 2'bx1 ? Fwd_EXEMEM : Fwd2Cmp_opB_ctl == 2'b10 ? Fwd_MEMWB : rtRawVal1;
 
 
     assign WriteRegister1 = RegDst1?rd1:(link1?5'd31:rt1);
@@ -195,7 +211,8 @@ RegFile RegFile (
      
      reg FORCE_FREEZE;
      reg INHIBIT_FREEZE;
-     assign WANT_FREEZE = ((FORCE_FREEZE | syscal1) && !INHIBIT_FREEZE);
+//ADDED Forwarding controls
+     assign WANT_FREEZE = ((FORCE_FREEZE | syscal1 | FWD_REQ_FREEZE) && !INHIBIT_FREEZE);
      
 always @(posedge CLK or negedge RESET) begin
     if(!RESET) begin

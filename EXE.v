@@ -63,14 +63,10 @@ module EXE(
     output reg MemWrite1_OUT,
 
 //ADDED
-    input forwardFromMem2rs1,
-    input forwardFromExe2rs1,
-    input [31:0] opA_FWD_EXEMEM,
-    input [31:0] opA_FWD_MEMWB,
-    input forwardFromMem2rt1,
-    input forwardFromExe2rt1,
-    input [31:0] opB_FWD_EXEMEM,
-    input [31:0] opB_FWD_MEMWB
+    input [ 1:0] Fwd2ALU_opA_ctl,
+    input [ 1:0] Fwd2ALU_opB_ctl,
+    input [31:0] Fwd_EXEMEM,
+    input [31:0] Fwd_MEMWB
 //ADDED
     
     );
@@ -84,8 +80,8 @@ module EXE(
 	 
 //CHANGED
 //Choose operands according to signal received from forwarding logic module
-assign A1 = forwardFromMem2rs1 ? opA_FWD_MEMWB : (forwardFromExe2rs1 ? opA_FWD_EXEMEM : OperandA1_IN);
-assign B1 = forwardFromMem2rt1 ? opB_FWD_MEMWB : (forwardFromExe2rt1 ? opB_FWD_EXEMEM : OperandB1_IN);
+assign A1 = Fwd2ALU_opA_ctl == 2'bx1 ? Fwd_EXEMEM : (Fwd2ALU_opA_ctl == 2'b10 ? Fwd_MEMWB : OperandA1_IN);
+assign B1 = Fwd2ALU_opB_ctl == 2'bx1 ? Fwd_EXEMEM : (Fwd2ALU_opB_ctl == 2'b10 ? Fwd_MEMWB : OperandB1_IN);
 //CHANGED
 
 reg [31:0] HI/*verilator public*/;
@@ -115,7 +111,7 @@ ALU ALU1(
 
 wire [31:0] MemWriteData1;
 
-assign MemWriteData1 = MemWriteData1_IN;
+assign MemWriteData1 = Fwd2ALU_opB_ctl == 2'bx1 ? Fwd_EXEMEM : Fwd2ALU_opB_ctl == 2'b10 ? Fwd_MEMWB : MemWriteData1_IN;
 
 always @(posedge CLK or negedge RESET) begin
 	if(!RESET) begin
@@ -143,8 +139,8 @@ always @(posedge CLK or negedge RESET) begin
             MemWrite1_OUT <= MemWrite1_IN;
 			if(comment1) begin
                 $display("EXE:Instr1=%x,Instr1_PC=%x,ALU_result1=%x; Write?%d to %d",Instr1_IN,Instr1_PC_IN,ALU_result1, RegWrite1_IN, WriteRegister1_IN);
-                $display("EXE:forwardEXErs = %x, forwardEXErt = %x",forwardFromExe2rs1, forwardFromExe2rt1);
-                $display("EXE:forwardMEMrs = %x, forwardMEMrt = %x",forwardFromMem2rs1, forwardFromMem2rt1);
+                $display("EXE:forwardEXErs = %x, forwardEXErt = %x",Fwd2ALU_opA_ctl[0], Fwd2ALU_opB_ctl[0]);
+                $display("EXE:forwardMEMrs = %x, forwardMEMrt = %x",Fwd2ALU_opA_ctl[1], Fwd2ALU_opB_ctl[1]);
                 //$display("EXE:ALU_Control1=%x; MemRead1=%d; MemWrite1=%d (Data:%x)",ALU_Control1_IN, MemRead1_IN, MemWrite1_IN, MemWriteData1);
                 //$display("EXE:OpA1=%x; OpB1=%x; HI=%x; LO=%x", A1, B1, new_HI,new_LO);
 			end

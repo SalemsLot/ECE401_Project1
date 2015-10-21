@@ -94,6 +94,7 @@ module MIPS (
     assign unused_i3 = Instr2_fIC;
 `endif
 
+
     IF IF(
         .CLK(CLK),
         .RESET(RESET),
@@ -125,6 +126,12 @@ module MIPS (
     wire [4:0]  ShiftAmount1_IDEXE;
     wire        RegWrite1_ID_async;            
     wire        RegDest1_ID_async;
+    //Forwarding control wires to branch compare unit
+    wire [1:0]  Fwd2Cmp_opA_ctl;
+    wire [1:0]  Fwd2Cmp_opB_ctl;
+
+    //ADDED - Tell ID that ForwardLogic requires a stall
+    wire        FWD_REQ_FREEZE;
     
     
     ID ID(
@@ -149,33 +156,38 @@ module MIPS (
         .WriteRegister1_OUT(WriteRegister1_IDEXE),
         .MemWriteData1_OUT(MemWriteData1_IDEXE),
         .RegWrite1_OUT(RegWrite1_IDEXE),
+//Forwarding
         .RegWrite1_asyncOUT(RegWrite1_ID_async),
         .RegDest1_asyncOUT(RegDest1_ID_async),
+        .Fwd2Cmp_opA_ctl(Fwd2Cmp_opA_ctl),
+        .Fwd2Cmp_opB_ctl(Fwd2Cmp_opB_ctl),
+        .Fwd_EXEMEM(ALU_result1_EXEMEM),
+        .Fwd_MEMWB(WriteData1_MEMWB),
+//Forwarding
         .ALU_Control1_OUT(ALU_Control1_IDEXE),
         .MemRead1_OUT(MemRead1_IDEXE),
         .MemWrite1_OUT(MemWrite1_IDEXE),
         .ShiftAmount1_OUT(ShiftAmount1_IDEXE),
         .SYS(SYS),
-        .WANT_FREEZE(STALL_IDIF)
+        .WANT_FREEZE(STALL_IDIF),
+        .FWD_REQ_FREEZE(FWD_REQ_FREEZE)
     );
 
-    wire forwardFromExe2rs;
-    wire forwardFromExe2rt;
-    wire forwardFromMem2rs;
-    wire forwardFromMem2rt;
+    //Forwarding control wires to ALU
+    wire [1:0] Fwd2ALU_opA_ctl;
+    wire [1:0] Fwd2ALU_opB_ctl;
 
     ForwardLogic FL1( 
        .CLK(CLK),
        .RESET(RESET),
        .Instr(Instr1_IFID),
-/* verilator lint_off PINCONNECTEMPTY */
-       .forwardFromExe2rs(forwardFromExe2rs),
-       .forwardFromExe2rt(forwardFromExe2rt),
-       .forwardFromMem2rs(forwardFromMem2rs),
-       .forwardFromMem2rt(forwardFromMem2rt),
-/* verilator lint_on PINCONNECTEMPTY */
+       .Fwd2ALU_opA_ctl(Fwd2ALU_opA_ctl),
+       .Fwd2ALU_opB_ctl(Fwd2ALU_opB_ctl),
+       .Fwd2Cmp_opA_ctl(Fwd2Cmp_opA_ctl),
+       .Fwd2Cmp_opB_ctl(Fwd2Cmp_opB_ctl),
        .RegWrite(RegWrite1_ID_async),            
-       .RegDest(RegDest1_ID_async)
+       .RegDest(RegDest1_ID_async),
+       .FWD_REQ_FREEZE(FWD_REQ_FREEZE)
     );
     
     wire [31:0] Instr1_EXEMEM;
@@ -212,14 +224,10 @@ module MIPS (
         .MemRead1_OUT(MemRead1_EXEMEM),
         .MemWrite1_OUT(MemWrite1_EXEMEM),
 //ADDED
-        .forwardFromMem2rs1(forwardFromMem2rs),
-        .forwardFromExe2rs1(forwardFromExe2rs),
-        .opA_FWD_EXEMEM(ALU_result1_EXEMEM),
-        .opA_FWD_MEMWB(WriteData1_MEMWB),
-        .forwardFromMem2rt1(forwardFromMem2rt),
-        .forwardFromExe2rt1(forwardFromExe2rt),
-        .opB_FWD_EXEMEM(ALU_result1_EXEMEM),
-        .opB_FWD_MEMWB(WriteData1_MEMWB)
+        .Fwd2ALU_opA_ctl(Fwd2ALU_opA_ctl),
+        .Fwd2ALU_opB_ctl(Fwd2ALU_opB_ctl),
+        .Fwd_EXEMEM(ALU_result1_EXEMEM),
+        .Fwd_MEMWB(WriteData1_MEMWB)
 //ADDED
     );
     

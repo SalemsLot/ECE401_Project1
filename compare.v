@@ -39,6 +39,7 @@ module compare(	Jump,
 			end
 			default:br_taken=1'b0; // default, don't branch
 		endcase
+                $display("Compare: opA = %x, opB = %x", OpA, OpB);
 	end
 
 endmodule

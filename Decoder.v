@@ -117,10 +117,10 @@ always begin
                 default: $display("Not an Instruction!");
             endcase
         end
-		6'b000010: begin {Link,RegDest,Jump,Branch,MemRead,MemWrite,ALUSrc,RegWrite,JumpRegister,SignOrZero,Syscall,ALUControl,MultRegAccess} = 19'b0011000000000111000; if (comment1)$display("[%s]J",TAG); end
-		6'b000011: begin {Link,RegDest,Jump,Branch,MemRead,MemWrite,ALUSrc,RegWrite,JumpRegister,SignOrZero,Syscall,ALUControl,MultRegAccess} = 19'b1011001101000000100; if (comment1)$display("[%s]JAL",TAG); end
-		6'b000100: begin {Link,RegDest,Jump,Branch,MemRead,MemWrite,ALUSrc,RegWrite,JumpRegister,SignOrZero,Syscall,ALUControl,MultRegAccess} = 19'b0101000001010001000; if (comment1)$display("[%s]BEQ",TAG); end
-		6'b000101: begin {Link,RegDest,Jump,Branch,MemRead,MemWrite,ALUSrc,RegWrite,JumpRegister,SignOrZero,Syscall,ALUControl,MultRegAccess} = 19'b0101000001010100100; if (comment1)$display("[%s]BNE",TAG); end
+	6'b000010: begin {Link,RegDest,Jump,Branch,MemRead,MemWrite,ALUSrc,RegWrite,JumpRegister,SignOrZero,Syscall,ALUControl,MultRegAccess} = 19'b0011000000000111000; if (comment1)$display("[%s]J",TAG); end
+	6'b000011: begin {Link,RegDest,Jump,Branch,MemRead,MemWrite,ALUSrc,RegWrite,JumpRegister,SignOrZero,Syscall,ALUControl,MultRegAccess} = 19'b1011001101000000100; if (comment1)$display("[%s]JAL",TAG); end
+	6'b000100: begin {Link,RegDest,Jump,Branch,MemRead,MemWrite,ALUSrc,RegWrite,JumpRegister,SignOrZero,Syscall,ALUControl,MultRegAccess} = 19'b0101000001010001000; if (comment1)$display("[%s]BEQ",TAG); end
+	6'b000101: begin {Link,RegDest,Jump,Branch,MemRead,MemWrite,ALUSrc,RegWrite,JumpRegister,SignOrZero,Syscall,ALUControl,MultRegAccess} = 19'b0101000001010100100; if (comment1)$display("[%s]BNE",TAG); end
         6'b000110: begin {Link,RegDest,Jump,Branch,MemRead,MemWrite,ALUSrc,RegWrite,JumpRegister,SignOrZero,Syscall,ALUControl,MultRegAccess} = 19'b0001000001010011000; if (comment1)$display("[%s]blez",TAG); end//BLEZ
         6'b000111: begin {Link,RegDest,Jump,Branch,MemRead,MemWrite,ALUSrc,RegWrite,JumpRegister,SignOrZero,Syscall,ALUControl,MultRegAccess} = 19'b0001000001010010100; if (comment1)$display("[%s]bgtz",TAG); end//BGTZ
         6'b001000: begin {Link,RegDest,Jump,Branch,MemRead,MemWrite,ALUSrc,RegWrite,JumpRegister,SignOrZero,Syscall,ALUControl,MultRegAccess} = 19'b0000001101000000100; if (comment1)$display("[%s]addi",TAG); end//ADDI  
