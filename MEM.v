@@ -51,8 +51,9 @@ module MEM(
 	 output reg [1:0] data_write_size_2DM,
     input [31:0] data_read_fDM,
 	 output MemRead_2DM,
-	 output MemWrite_2DM
+	 output MemWrite_2DM,
 
+    output [31:0] WriteData_async_OUT
 
     );
 	 
@@ -96,7 +97,8 @@ module MEM(
      
 	 wire comment1;
 	 assign comment1 = 1;
-	 
+
+    assign WriteData_async_OUT = WriteData1; 
 
 always @(data_read_fDM) begin
 	//$display("MEM Received:data_read_fDM=%x",data_read_fDM);

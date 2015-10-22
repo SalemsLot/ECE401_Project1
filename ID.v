@@ -38,8 +38,8 @@ module ID(
      //Forwarding
      input [ 1:0] Fwd2Cmp_opA_ctl,
      input [ 1:0] Fwd2Cmp_opB_ctl,
-     input [31:0] Fwd_EXEMEM,
-     input [31:0] Fwd_MEMWB,
+     input [31:0] Fwd_ALU_Result_IN,
+     input [31:0] Fwd_MEM_WriteData_IN,
 
      
      //Alternate PC for next fetch (branch/jump destination)
@@ -86,7 +86,8 @@ module ID(
      //ForwardLogic requires a stall.
      input FWD_REQ_FREEZE,
      //Tell ForwardLogic that instruction is a branch
-     output branch1
+     output branch1,
+     output link1
 
     );
      
@@ -146,7 +147,7 @@ module ID(
     
     wire [31:0] rsval_jump1;
     
-    assign rsval_jump1 = Fwd2Cmp_opA_ctl == 2'bx1 ? Fwd_EXEMEM : Fwd2Cmp_opA_ctl == 2'b10 ? Fwd_MEMWB : rsRawVal1;
+    assign rsval_jump1 = (Fwd2Cmp_opA_ctl == 2'b01 || Fwd2Cmp_opA_ctl == 2'b11) ? Fwd_ALU_Result_IN : Fwd2Cmp_opA_ctl == 2'b10 ? Fwd_MEM_WriteData_IN : rsRawVal1;
 
 NextInstructionCalculator NIA1 (
     .Instr_PC_Plus4(Instr_PC_Plus4_IN),
@@ -179,8 +180,8 @@ compare branch_compare1 (
 
 //Handle pipelining
 //ADDED Forwarding controls
-assign rsval1 = Fwd2Cmp_opA_ctl == 2'bx1 ? Fwd_EXEMEM : Fwd2Cmp_opA_ctl == 2'b10 ? Fwd_MEMWB : rsRawVal1;
-assign rtval1 = Fwd2Cmp_opB_ctl == 2'bx1 ? Fwd_EXEMEM : Fwd2Cmp_opB_ctl == 2'b10 ? Fwd_MEMWB : rtRawVal1;
+assign rsval1 = (Fwd2Cmp_opA_ctl == 2'b01 || Fwd2Cmp_opA_ctl == 2'b11) ? Fwd_ALU_Result_IN : Fwd2Cmp_opA_ctl == 2'b10 ? Fwd_MEM_WriteData_IN : rsRawVal1;
+assign rtval1 = (Fwd2Cmp_opB_ctl == 2'b01 || Fwd2Cmp_opB_ctl == 2'b11) ? Fwd_ALU_Result_IN : Fwd2Cmp_opB_ctl == 2'b10 ? Fwd_MEM_WriteData_IN : rtRawVal1;
 
 
     assign WriteRegister1 = RegDst1?rd1:(link1?5'd31:rt1);
@@ -310,6 +311,7 @@ always @(posedge CLK or negedge RESET) begin
             end*/
             if(comment1) begin
                 $display("ID1:Instr=%x,Instr_PC=%x,Req_Alt_PC=%d:Alt_PC=%x;SYS=%d(%d)",Instr1_IN,Instr_PC_IN,Request_Alt_PC1,Alt_PC1,syscal1,syscall_bubble_counter);
+                $display("ID1: FWD_ALU_RESULT_IN = %x, FWD_MEMWB = %x", Fwd_ALU_Result_IN, Fwd_MEM_WriteData_IN);
                 //$display("ID1:A:Reg[%d]=%x; B:Reg[%d]=%x; Write?%d to %d",RegA1, OpA1, RegB1, OpB1, (WriteRegister1!=5'd0)?RegWrite1:1'd0, WriteRegister1);
                 //$display("ID1:ALU_Control=%x; MemRead=%d; MemWrite=%d (%x); ShiftAmount=%d",ALU_control1, MemRead1, MemWrite1, MemWriteData1, shiftAmount1);
             end

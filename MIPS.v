@@ -132,8 +132,13 @@ module MIPS (
 
     //ADDED - Tell ForwardLogic that instruction is a branch
     wire        Branch;
+    wire        Link;
     //ADDED - Tell ID that ForwardLogic requires a stall
     wire        FWD_REQ_FREEZE;
+
+    //ADDED - Wires that pass forwarded data from EXE and MEM stages
+    wire [31:0] ALU_Result_async;
+    wire [31:0] MEM_WriteData_async;
     
     
     ID ID(
@@ -163,9 +168,10 @@ module MIPS (
         .RegDest1_asyncOUT(RegDest1_ID_async),
         .Fwd2Cmp_opA_ctl(Fwd2Cmp_opA_ctl),
         .Fwd2Cmp_opB_ctl(Fwd2Cmp_opB_ctl),
-        .Fwd_EXEMEM(ALU_result1_EXEMEM),
-        .Fwd_MEMWB(WriteData1_MEMWB),
+        .Fwd_ALU_Result_IN(ALU_Result_async),
+        .Fwd_MEM_WriteData_IN(MEM_WriteData_async),
         .branch1(Branch),
+        .link1(Link),
         .FWD_REQ_FREEZE(FWD_REQ_FREEZE),
 //Forwarding
         .ALU_Control1_OUT(ALU_Control1_IDEXE),
@@ -191,6 +197,7 @@ module MIPS (
        .RegWrite(RegWrite1_ID_async),            
        .RegDest(RegDest1_ID_async),
        .Branch(Branch),
+       .Link(Link),
        .FWD_REQ_FREEZE(FWD_REQ_FREEZE)
     );
     
@@ -230,8 +237,9 @@ module MIPS (
 //ADDED
         .Fwd2ALU_opA_ctl(Fwd2ALU_opA_ctl),
         .Fwd2ALU_opB_ctl(Fwd2ALU_opB_ctl),
-        .Fwd_EXEMEM(ALU_result1_EXEMEM),
-        .Fwd_MEMWB(WriteData1_MEMWB)
+        .Fwd_ALU_Result_IN(ALU_result1_EXEMEM),
+        .Fwd_MEM_WriteData_IN(WriteData1_MEMWB),
+        .ALU_Result_async_OUT(ALU_Result_async)
 //ADDED
     );
     
@@ -285,7 +293,8 @@ module MIPS (
         .data_write_size_2DM(data_write_size_2DC),
         .data_read_fDM(data_read_fDC),
         .MemRead_2DM(read_2DC),
-        .MemWrite_2DM(write_2DC)
+        .MemWrite_2DM(write_2DC),
+        .WriteData_async_OUT(MEM_WriteData_async)
     );
      
     

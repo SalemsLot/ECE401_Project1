@@ -65,8 +65,10 @@ module EXE(
 //ADDED
     input [ 1:0] Fwd2ALU_opA_ctl,
     input [ 1:0] Fwd2ALU_opB_ctl,
-    input [31:0] Fwd_EXEMEM,
-    input [31:0] Fwd_MEMWB
+    input [31:0] Fwd_ALU_Result_IN,
+    input [31:0] Fwd_MEM_WriteData_IN,
+
+    output [31:0] ALU_Result_async_OUT
 //ADDED
     
     );
@@ -80,9 +82,11 @@ module EXE(
 	 
 //CHANGED
 //Choose operands according to signal received from forwarding logic module
-assign A1 = Fwd2ALU_opA_ctl == 2'bx1 ? Fwd_EXEMEM : (Fwd2ALU_opA_ctl == 2'b10 ? Fwd_MEMWB : OperandA1_IN);
-assign B1 = Fwd2ALU_opB_ctl == 2'bx1 ? Fwd_EXEMEM : (Fwd2ALU_opB_ctl == 2'b10 ? Fwd_MEMWB : OperandB1_IN);
+assign A1 = (Fwd2ALU_opA_ctl == 2'b01 || Fwd2ALU_opA_ctl == 2'b11) ? Fwd_ALU_Result_IN : (Fwd2ALU_opA_ctl == 2'b10 ? Fwd_MEM_WriteData_IN : OperandA1_IN);
+assign B1 = (Fwd2ALU_opB_ctl == 2'b01 || Fwd2ALU_opB_ctl == 2'b11) ? Fwd_ALU_Result_IN : (Fwd2ALU_opB_ctl == 2'b10 ? Fwd_MEM_WriteData_IN : OperandB1_IN);
 //CHANGED
+
+assign ALU_Result_async_OUT = ALU_result1;
 
 reg [31:0] HI/*verilator public*/;
 reg [31:0] LO/*verilator public*/;
@@ -111,7 +115,7 @@ ALU ALU1(
 
 wire [31:0] MemWriteData1;
 
-assign MemWriteData1 = Fwd2ALU_opB_ctl == 2'bx1 ? Fwd_EXEMEM : Fwd2ALU_opB_ctl == 2'b10 ? Fwd_MEMWB : MemWriteData1_IN;
+assign MemWriteData1 = (Fwd2ALU_opB_ctl == 2'b01 || Fwd2ALU_opB_ctl == 2'b11) ? Fwd_ALU_Result_IN : Fwd2ALU_opB_ctl == 2'b10 ? Fwd_MEM_WriteData_IN : MemWriteData1_IN;
 
 always @(posedge CLK or negedge RESET) begin
 	if(!RESET) begin
@@ -142,7 +146,7 @@ always @(posedge CLK or negedge RESET) begin
                 $display("EXE:forwardEXErs = %x, forwardEXErt = %x",Fwd2ALU_opA_ctl[0], Fwd2ALU_opB_ctl[0]);
                 $display("EXE:forwardMEMrs = %x, forwardMEMrt = %x",Fwd2ALU_opA_ctl[1], Fwd2ALU_opB_ctl[1]);
                 //$display("EXE:ALU_Control1=%x; MemRead1=%d; MemWrite1=%d (Data:%x)",ALU_Control1_IN, MemRead1_IN, MemWrite1_IN, MemWriteData1);
-                //$display("EXE:OpA1=%x; OpB1=%x; HI=%x; LO=%x", A1, B1, new_HI,new_LO);
+                $display("EXE:OpA1=%x; OpB1=%x; HI=%x; LO=%x", A1, B1, new_HI,new_LO);
 			end
 	end
 end
