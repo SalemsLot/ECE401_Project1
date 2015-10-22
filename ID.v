@@ -84,7 +84,9 @@ module ID(
      output WANT_FREEZE,
 
      //ForwardLogic requires a stall.
-     input FWD_REQ_FREEZE
+     input FWD_REQ_FREEZE,
+     //Tell ForwardLogic that instruction is a branch
+     output branch1
 
     );
      

@@ -130,6 +130,8 @@ module MIPS (
     wire [1:0]  Fwd2Cmp_opA_ctl;
     wire [1:0]  Fwd2Cmp_opB_ctl;
 
+    //ADDED - Tell ForwardLogic that instruction is a branch
+    wire        Branch;
     //ADDED - Tell ID that ForwardLogic requires a stall
     wire        FWD_REQ_FREEZE;
     
@@ -163,14 +165,15 @@ module MIPS (
         .Fwd2Cmp_opB_ctl(Fwd2Cmp_opB_ctl),
         .Fwd_EXEMEM(ALU_result1_EXEMEM),
         .Fwd_MEMWB(WriteData1_MEMWB),
+        .branch1(Branch),
+        .FWD_REQ_FREEZE(FWD_REQ_FREEZE),
 //Forwarding
         .ALU_Control1_OUT(ALU_Control1_IDEXE),
         .MemRead1_OUT(MemRead1_IDEXE),
         .MemWrite1_OUT(MemWrite1_IDEXE),
         .ShiftAmount1_OUT(ShiftAmount1_IDEXE),
         .SYS(SYS),
-        .WANT_FREEZE(STALL_IDIF),
-        .FWD_REQ_FREEZE(FWD_REQ_FREEZE)
+        .WANT_FREEZE(STALL_IDIF)
     );
 
     //Forwarding control wires to ALU
@@ -187,6 +190,7 @@ module MIPS (
        .Fwd2Cmp_opB_ctl(Fwd2Cmp_opB_ctl),
        .RegWrite(RegWrite1_ID_async),            
        .RegDest(RegDest1_ID_async),
+       .Branch(Branch),
        .FWD_REQ_FREEZE(FWD_REQ_FREEZE)
     );
     

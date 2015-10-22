@@ -29,6 +29,7 @@ module ForwardLogic(
 
        input             RegWrite,                 //This instruction writes to a register
        input             RegDest,                  //This instruction uses the RegDest register (Instr[15:11])
+       input             Branch,                   //This instruction is a branch, stalling may be required
 
        output            FWD_REQ_FREEZE            //Branch instruction compare has a data dependence that 
                                                    //cannot be resolved with forwarding
@@ -68,9 +69,8 @@ module ForwardLogic(
 
        //TODO: Add forwarding for LWL/LWR case
 
-       //Stall pipeline when branch compary has a dependency on PRH[0]
-       //TODO: Do this for all relevant opcodes, currently only works with beq
-       assign FWD_REQ_FREEZE = (Instr[31:26] == 6'b000100) && (PipelineRegHistory[0] != 0) ? (PipelineRegHistory[0] == CurrentSrcRegrs) || (PipelineRegHistory[0] == CurrentSrcRegrt) ? 1 : 0 : 0;
+       //Stall pipeline when branch compare has a dependency on PRH[0]
+       assign FWD_REQ_FREEZE = PipelineRegHistory[0] == 0 ? 1'b0 : Branch ? (PipelineRegHistory[0] == CurrentSrcRegrs) || (PipelineRegHistory[0] == CurrentSrcRegrt) ? 1'b1 : 1'b0 : 1'b0;
        
        always @ (posedge CLK or negedge RESET)
          begin
