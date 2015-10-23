@@ -66,6 +66,7 @@ module ID(
      //we'll be writing to a register... passed to EXE
      output reg RegWrite1_OUT,
      output     RegWrite1_asyncOUT,
+     output     MemWrite1_asyncOUT,
      //we'll be using the rd field of the instruction
      output     RegDest1_asyncOUT,
     //ALU control passed to EXE
@@ -143,6 +144,7 @@ module ID(
      //MOD Additional Signals for ForwardLogic
      assign RegWrite1_asyncOUT = (WriteRegister1!=5'd0)?RegWrite1:1'd0;;
      assign RegDest1_asyncOUT = RegDst1;
+     assign MemWrite1_asyncOUT = MemWrite1;
 //Begin branch/jump calculation
     
     wire [31:0] rsval_jump1;

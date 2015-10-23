@@ -126,6 +126,7 @@ module MIPS (
     wire [4:0]  ShiftAmount1_IDEXE;
     wire        RegWrite1_ID_async;            
     wire        RegDest1_ID_async;
+    wire        MemWrite1_ID_async;
     //Forwarding control wires to branch compare unit
     wire [1:0]  Fwd2Cmp_opA_ctl;
     wire [1:0]  Fwd2Cmp_opB_ctl;
@@ -166,6 +167,7 @@ module MIPS (
 //Forwarding
         .RegWrite1_asyncOUT(RegWrite1_ID_async),
         .RegDest1_asyncOUT(RegDest1_ID_async),
+        .MemWrite1_asyncOUT(MemWrite1_ID_async),
         .Fwd2Cmp_opA_ctl(Fwd2Cmp_opA_ctl),
         .Fwd2Cmp_opB_ctl(Fwd2Cmp_opB_ctl),
         .Fwd_ALU_Result_IN(ALU_Result_async),
@@ -185,6 +187,7 @@ module MIPS (
     //Forwarding control wires to ALU
     wire [1:0] Fwd2ALU_opA_ctl;
     wire [1:0] Fwd2ALU_opB_ctl;
+    wire [1:0] Fwd2ALU_MemWrite_ctl;
 
     ForwardLogic FL1( 
        .CLK(CLK),
@@ -192,10 +195,12 @@ module MIPS (
        .Instr(Instr1_IFID),
        .Fwd2ALU_opA_ctl(Fwd2ALU_opA_ctl),
        .Fwd2ALU_opB_ctl(Fwd2ALU_opB_ctl),
+       .Fwd2ALU_MemWrite_ctl(Fwd2ALU_MemWrite_ctl),
        .Fwd2Cmp_opA_ctl(Fwd2Cmp_opA_ctl),
        .Fwd2Cmp_opB_ctl(Fwd2Cmp_opB_ctl),
        .RegWrite(RegWrite1_ID_async),            
        .RegDest(RegDest1_ID_async),
+       .MemWrite(MemWrite1_ID_async),
        .Branch(Branch),
        .Link(Link),
        .FWD_REQ_FREEZE(FWD_REQ_FREEZE)
@@ -237,6 +242,7 @@ module MIPS (
 //ADDED
         .Fwd2ALU_opA_ctl(Fwd2ALU_opA_ctl),
         .Fwd2ALU_opB_ctl(Fwd2ALU_opB_ctl),
+        .Fwd2ALU_MemWrite_ctl(Fwd2ALU_MemWrite_ctl),
         .Fwd_ALU_Result_IN(ALU_result1_EXEMEM),
         .Fwd_MEM_WriteData_IN(WriteData1_MEMWB),
         .ALU_Result_async_OUT(ALU_Result_async)

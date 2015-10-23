@@ -65,6 +65,7 @@ module EXE(
 //ADDED
     input [ 1:0] Fwd2ALU_opA_ctl,
     input [ 1:0] Fwd2ALU_opB_ctl,
+    input [ 1:0] Fwd2ALU_MemWrite_ctl,
     input [31:0] Fwd_ALU_Result_IN,
     input [31:0] Fwd_MEM_WriteData_IN,
 
@@ -115,7 +116,7 @@ ALU ALU1(
 
 wire [31:0] MemWriteData1;
 
-assign MemWriteData1 = (Fwd2ALU_opB_ctl == 2'b01 || Fwd2ALU_opB_ctl == 2'b11) ? Fwd_ALU_Result_IN : Fwd2ALU_opB_ctl == 2'b10 ? Fwd_MEM_WriteData_IN : MemWriteData1_IN;
+assign MemWriteData1 = (Fwd2ALU_MemWrite_ctl == 2'b01 || Fwd2ALU_MemWrite_ctl == 2'b11) ? Fwd_ALU_Result_IN : Fwd2ALU_MemWrite_ctl == 2'b10 ? Fwd_MEM_WriteData_IN : MemWriteData1_IN;
 
 always @(posedge CLK or negedge RESET) begin
 	if(!RESET) begin

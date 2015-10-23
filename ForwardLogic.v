@@ -24,11 +24,13 @@ module ForwardLogic(
        input      [31:0] Instr,
        output reg [ 1:0] Fwd2ALU_opA_ctl,          //Forward to ALU operand A
        output reg [ 1:0] Fwd2ALU_opB_ctl,          //Forward to ALU operand B
+       output reg [ 1:0] Fwd2ALU_MemWrite_ctl,     //Forward to ALU MemWriteData
        output reg [ 1:0] Fwd2Cmp_opA_ctl,          //Forward to branch compare opA or jump register
        output reg [ 1:0] Fwd2Cmp_opB_ctl,          //Forward to branch compare opB
 
        input             RegWrite,                 //This instruction writes to a register
        input             RegDest,                  //This instruction uses the RegDest register (Instr[15:11])
+       input             MemWrite,                 //This instruction writes to memory
        input             Branch,                   //This instruction is a branch, stalling may be required
        input             Link,
 
@@ -42,15 +44,18 @@ module ForwardLogic(
        wire [4:0] CurrentDestReg;  
        wire [4:0] CurrentSrcRegrs;  
        wire [4:0] CurrentSrcRegrt;  
+       wire [4:0] CurrentSrcRegMem;
      
        wire [1:0] Fwd2ALU_opA_ctl1;        // Forward to ALU operand A - First bit: Forward from MEM, Second bit: Forward from EXE
        wire [1:0] Fwd2ALU_opB_ctl1;        // Forward to ALU operand B - First bit: Forward from MEM, Second bit: Forward from EXE
+       wire [1:0] Fwd2ALU_MemWrite_ctl1;   // Forward to ALU MemWriteData = First bit: Forward from MEM, Second bit: Forward from EXE
        //Calculate the destination register for the current instruction
        assign CurrentDestReg = (RegWrite) ?  (RegDest? Instr[15:11]:Instr[20:16]): 5'b0;
 
        //Calculate the source register for the current instruction 
        assign CurrentSrcRegrs = Instr[25:21]; 
        assign CurrentSrcRegrt = (RegDest)?Instr[20:16]:5'b0; 
+       assign CurrentSrcRegMem = (MemWrite)?Instr[20:16]:5'b0;
 
        //We treat 'zero' entries as by-pass ignore for when there aren't any reg write
        // If the current destination register matches any value in the Pipeline History the we check the next condition, else we don't by-pass
@@ -60,6 +65,9 @@ module ForwardLogic(
        
        assign Fwd2ALU_opB_ctl1[0] = (PipelineRegHistory[0] == 0) ? 1'b0 : (PipelineRegHistory[0] == CurrentSrcRegrt ) ? 1'b1 : 1'b0;
        assign Fwd2ALU_opB_ctl1[1] = (PipelineRegHistory[1] == 0) ? 1'b0 : (PipelineRegHistory[1] == CurrentSrcRegrt ) ? 1'b1 : 1'b0;
+
+       assign Fwd2ALU_MemWrite_ctl1[0] = (PipelineRegHistory[0] == 0) ? 1'b0 : (PipelineRegHistory[0] == CurrentSrcRegMem ) ? 1'b1 : 1'b0;
+       assign Fwd2ALU_MemWrite_ctl1[1] = (PipelineRegHistory[1] == 0) ? 1'b0 : (PipelineRegHistory[1] == CurrentSrcRegMem ) ? 1'b1 : 1'b0;
        
        //Forwarding to the branch compare unit
        assign Fwd2Cmp_opA_ctl[0] = (PipelineRegHistory[0] == 0) ? 1'b0 : (PipelineRegHistory[0] == CurrentSrcRegrs ) ? 1'b1 : 1'b0;
@@ -86,6 +94,7 @@ module ForwardLogic(
            /*****/
            Fwd2ALU_opA_ctl <= Fwd2ALU_opA_ctl1;
            Fwd2ALU_opB_ctl <= Fwd2ALU_opB_ctl1;
+           Fwd2ALU_MemWrite_ctl <= Fwd2ALU_MemWrite_ctl1;
            /****/
            PipelineRegHistory[0] <= CurrentDestReg;
            PipelineRegHistory[1] <= PipelineRegHistory[0];
