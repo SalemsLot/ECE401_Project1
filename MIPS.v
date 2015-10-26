@@ -128,14 +128,11 @@ module MIPS (
     wire        RegDest1_ID_async;
     wire        MemWrite1_ID_async;
     //Forwarding control wires to branch compare unit
-    wire [1:0]  Fwd2Cmp_opA_ctl;
-    wire [1:0]  Fwd2Cmp_opB_ctl;
+    wire [2:0]  Fwd2Cmp_opA_ctl;
+    wire [2:0]  Fwd2Cmp_opB_ctl;
 
-    //ADDED - Tell ForwardLogic that instruction is a branch
-    wire        Branch;
+    //ADDED - Tell ForwardLogic that instruction is a branch and link
     wire        Link;
-    //ADDED - Tell ID that ForwardLogic requires a stall
-    wire        FWD_REQ_FREEZE;
 
     //ADDED - Wires that pass forwarded data from EXE and MEM stages
     wire [31:0] ALU_Result_async;
@@ -172,9 +169,8 @@ module MIPS (
         .Fwd2Cmp_opB_ctl(Fwd2Cmp_opB_ctl),
         .Fwd_ALU_Result_IN(ALU_Result_async),
         .Fwd_MEM_WriteData_IN(MEM_WriteData_async),
-        .branch1(Branch),
+        .Fwd_MEMWB_WriteData_IN(WriteData1_MEMWB),
         .link1(Link),
-        .FWD_REQ_FREEZE(FWD_REQ_FREEZE),
 //Forwarding
         .ALU_Control1_OUT(ALU_Control1_IDEXE),
         .MemRead1_OUT(MemRead1_IDEXE),
@@ -185,9 +181,9 @@ module MIPS (
     );
 
     //Forwarding control wires to ALU
-    wire [1:0] Fwd2ALU_opA_ctl;
-    wire [1:0] Fwd2ALU_opB_ctl;
-    wire [1:0] Fwd2ALU_MemWrite_ctl;
+    wire [2:0] Fwd2ALU_opA_ctl;
+    wire [2:0] Fwd2ALU_opB_ctl;
+    wire [2:0] Fwd2ALU_MemWrite_ctl;
 
     ForwardLogic FL1( 
        .CLK(CLK),
@@ -201,9 +197,7 @@ module MIPS (
        .RegWrite(RegWrite1_ID_async),            
        .RegDest(RegDest1_ID_async),
        .MemWrite(MemWrite1_ID_async),
-       .Branch(Branch),
-       .Link(Link),
-       .FWD_REQ_FREEZE(FWD_REQ_FREEZE)
+       .Link(Link)
     );
     
     wire [31:0] Instr1_EXEMEM;
@@ -245,6 +239,7 @@ module MIPS (
         .Fwd2ALU_MemWrite_ctl(Fwd2ALU_MemWrite_ctl),
         .Fwd_ALU_Result_IN(ALU_result1_EXEMEM),
         .Fwd_MEM_WriteData_IN(WriteData1_MEMWB),
+        .Fwd_MEMWB_WriteData_IN(WriteData1_MEMWB),
         .ALU_Result_async_OUT(ALU_Result_async)
 //ADDED
     );

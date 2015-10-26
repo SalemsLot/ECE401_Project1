@@ -63,11 +63,12 @@ module EXE(
     output reg MemWrite1_OUT,
 
 //ADDED
-    input [ 1:0] Fwd2ALU_opA_ctl,
-    input [ 1:0] Fwd2ALU_opB_ctl,
-    input [ 1:0] Fwd2ALU_MemWrite_ctl,
+    input [ 2:0] Fwd2ALU_opA_ctl,
+    input [ 2:0] Fwd2ALU_opB_ctl,
+    input [ 2:0] Fwd2ALU_MemWrite_ctl,
     input [31:0] Fwd_ALU_Result_IN,
     input [31:0] Fwd_MEM_WriteData_IN,
+    input [31:0] Fwd_MEMWB_WriteData_IN,
 
     output [31:0] ALU_Result_async_OUT
 //ADDED
@@ -80,12 +81,18 @@ module EXE(
 	 	 
 	 wire comment1;
 	 assign comment1 = 1;
+
+         reg [31:0] Fwd_MEMWB_WriteData;
 	 
 //CHANGED
 //Choose operands according to signal received from forwarding logic module
-assign A1 = (Fwd2ALU_opA_ctl == 2'b01 || Fwd2ALU_opA_ctl == 2'b11) ? Fwd_ALU_Result_IN : (Fwd2ALU_opA_ctl == 2'b10 ? Fwd_MEM_WriteData_IN : OperandA1_IN);
-assign B1 = (Fwd2ALU_opB_ctl == 2'b01 || Fwd2ALU_opB_ctl == 2'b11) ? Fwd_ALU_Result_IN : (Fwd2ALU_opB_ctl == 2'b10 ? Fwd_MEM_WriteData_IN : OperandB1_IN);
+assign A1 = (Fwd2ALU_opA_ctl == 3'b001 || Fwd2ALU_opA_ctl == 3'b011 || Fwd2ALU_opA_ctl == 3'b101 || Fwd2ALU_opA_ctl == 3'b111) ? Fwd_ALU_Result_IN : (Fwd2ALU_opA_ctl == 3'b010 || Fwd2ALU_opA_ctl == 3'b110) ? Fwd_MEM_WriteData_IN : Fwd2ALU_opA_ctl == 3'b100 ? Fwd_MEMWB_WriteData : OperandA1_IN;
+assign B1 = (Fwd2ALU_opB_ctl == 3'b001 || Fwd2ALU_opB_ctl == 3'b011 || Fwd2ALU_opB_ctl == 3'b101 || Fwd2ALU_opB_ctl == 3'b111) ? Fwd_ALU_Result_IN : (Fwd2ALU_opB_ctl == 3'b010 || Fwd2ALU_opB_ctl == 3'b110) ? Fwd_MEM_WriteData_IN : Fwd2ALU_opB_ctl == 3'b100 ? Fwd_MEMWB_WriteData : OperandB1_IN;
 //CHANGED
+
+always @(posedge CLK) begin
+    Fwd_MEMWB_WriteData <= Fwd_MEMWB_WriteData_IN;
+end
 
 assign ALU_Result_async_OUT = ALU_result1;
 
@@ -116,7 +123,7 @@ ALU ALU1(
 
 wire [31:0] MemWriteData1;
 
-assign MemWriteData1 = (Fwd2ALU_MemWrite_ctl == 2'b01 || Fwd2ALU_MemWrite_ctl == 2'b11) ? Fwd_ALU_Result_IN : Fwd2ALU_MemWrite_ctl == 2'b10 ? Fwd_MEM_WriteData_IN : MemWriteData1_IN;
+assign MemWriteData1 = (Fwd2ALU_MemWrite_ctl == 3'b001 || Fwd2ALU_MemWrite_ctl == 3'b011 || Fwd2ALU_MemWrite_ctl == 3'b101 || Fwd2ALU_MemWrite_ctl == 3'b111) ? Fwd_ALU_Result_IN : (Fwd2ALU_MemWrite_ctl == 3'b010 || Fwd2ALU_MemWrite_ctl == 3'b110) ? Fwd_MEM_WriteData_IN : Fwd2ALU_MemWrite_ctl == 3'b100 ? Fwd_MEMWB_WriteData : MemWriteData1_IN;
 
 always @(posedge CLK or negedge RESET) begin
 	if(!RESET) begin

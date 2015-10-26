@@ -32,9 +32,7 @@ module NextInstructionCalculator(
     /* Where we need to jump to */
     output [31:0] NextInstructionAddress,
     /* The register for the jr/jalr (used for debugging Jump Register) */
-	 input [4:0] Register,
-
-    input FWD_REQ_FREEZE
+	 input [4:0] Register
     );
 
     /* A version of the immediate suitable for feeding to 32bit addition*/
@@ -58,7 +56,7 @@ module NextInstructionCalculator(
     /* This is wrong; the assignments are here to avoid "Signal is not used" compile warnings. */
     //assign NextInstructionAddress = signExtended_shifted_immediate+jumpDestination_immediate+branchDestination_immediate;
     // FWD_REQ_FREEZE added to conditional to avoid skipping branch delay slot when ForwardLogic requires a stall
-    assign NextInstructionAddress = !FWD_REQ_FREEZE ? Jump ? (JumpRegister?RegisterValue:jumpDestination_immediate):branchDestination_immediate : Instr_PC_Plus4;
+    assign NextInstructionAddress = Jump ? (JumpRegister?RegisterValue:jumpDestination_immediate):branchDestination_immediate;
 
 always @(Jump or JumpRegister or RegisterValue or Instr_PC_Plus4 or Instruction) begin
 	if(Jump) begin

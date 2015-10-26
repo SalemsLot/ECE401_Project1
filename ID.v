@@ -36,10 +36,11 @@ module ID(
      input RegWrite1_IN,
 
      //Forwarding
-     input [ 1:0] Fwd2Cmp_opA_ctl,
-     input [ 1:0] Fwd2Cmp_opB_ctl,
+     input [ 2:0] Fwd2Cmp_opA_ctl,
+     input [ 2:0] Fwd2Cmp_opB_ctl,
      input [31:0] Fwd_ALU_Result_IN,
      input [31:0] Fwd_MEM_WriteData_IN,
+     input [31:0] Fwd_MEMWB_WriteData_IN,
 
      
      //Alternate PC for next fetch (branch/jump destination)
@@ -84,10 +85,7 @@ module ID(
      //Tell fetch to stop advancing the PC, and wait.
      output WANT_FREEZE,
 
-     //ForwardLogic requires a stall.
-     input FWD_REQ_FREEZE,
-     //Tell ForwardLogic that instruction is a branch
-     output branch1,
+     //Tell ForwardLogic that instruction is a branch and link
      output link1
 
     );
@@ -149,7 +147,7 @@ module ID(
     
     wire [31:0] rsval_jump1;
     
-    assign rsval_jump1 = (Fwd2Cmp_opA_ctl == 2'b01 || Fwd2Cmp_opA_ctl == 2'b11) ? Fwd_ALU_Result_IN : Fwd2Cmp_opA_ctl == 2'b10 ? Fwd_MEM_WriteData_IN : rsRawVal1;
+    assign rsval_jump1 = (Fwd2Cmp_opA_ctl == 3'b001 || Fwd2Cmp_opA_ctl == 3'b011 || Fwd2Cmp_opA_ctl == 3'b101 || Fwd2Cmp_opA_ctl == 3'b111) ? Fwd_ALU_Result_IN : (Fwd2Cmp_opA_ctl == 3'b010 || Fwd2Cmp_opA_ctl == 3'b110) ? Fwd_MEM_WriteData_IN : Fwd2Cmp_opA_ctl == 3'b100 ? Fwd_MEMWB_WriteData_IN : rsRawVal1;
 
 NextInstructionCalculator NIA1 (
     .Instr_PC_Plus4(Instr_PC_Plus4_IN),
@@ -158,9 +156,7 @@ NextInstructionCalculator NIA1 (
     .JumpRegister(jumpRegister_Flag1), 
     .RegisterValue(rsval_jump1), 
     .NextInstructionAddress(Alt_PC1),
-     .Register(rs1),
-//ADDED: make sure branch delay slot is executed when ForwardLogic requests a stall
-     .FWD_REQ_FREEZE(FWD_REQ_FREEZE)
+     .Register(rs1)
     );
 
      wire [31:0]    signExtended_immediate1;
@@ -182,8 +178,8 @@ compare branch_compare1 (
 
 //Handle pipelining
 //ADDED Forwarding controls
-assign rsval1 = (Fwd2Cmp_opA_ctl == 2'b01 || Fwd2Cmp_opA_ctl == 2'b11) ? Fwd_ALU_Result_IN : Fwd2Cmp_opA_ctl == 2'b10 ? Fwd_MEM_WriteData_IN : rsRawVal1;
-assign rtval1 = (Fwd2Cmp_opB_ctl == 2'b01 || Fwd2Cmp_opB_ctl == 2'b11) ? Fwd_ALU_Result_IN : Fwd2Cmp_opB_ctl == 2'b10 ? Fwd_MEM_WriteData_IN : rtRawVal1;
+assign rsval1 = (Fwd2Cmp_opA_ctl == 3'b001 || Fwd2Cmp_opA_ctl == 3'b011 || Fwd2Cmp_opA_ctl == 3'b101 || Fwd2Cmp_opA_ctl == 3'b111) ? Fwd_ALU_Result_IN : (Fwd2Cmp_opA_ctl == 3'b010 || Fwd2Cmp_opA_ctl == 3'b110) ? Fwd_MEM_WriteData_IN : Fwd2Cmp_opA_ctl == 3'b100 ? Fwd_MEMWB_WriteData_IN : rsRawVal1;
+assign rtval1 = (Fwd2Cmp_opB_ctl == 3'b001 || Fwd2Cmp_opB_ctl == 3'b011 || Fwd2Cmp_opB_ctl == 3'b101 || Fwd2Cmp_opB_ctl == 3'b111) ? Fwd_ALU_Result_IN : (Fwd2Cmp_opB_ctl == 3'b010 || Fwd2Cmp_opB_ctl == 3'b110) ? Fwd_MEM_WriteData_IN : Fwd2Cmp_opB_ctl == 3'b100 ? Fwd_MEMWB_WriteData_IN : rtRawVal1;
 
 
     assign WriteRegister1 = RegDst1?rd1:(link1?5'd31:rt1);
@@ -216,8 +212,7 @@ RegFile RegFile (
      
      reg FORCE_FREEZE;
      reg INHIBIT_FREEZE;
-//ADDED Forwarding controls
-     assign WANT_FREEZE = ((FORCE_FREEZE | syscal1 | FWD_REQ_FREEZE) && !INHIBIT_FREEZE);
+     assign WANT_FREEZE = ((FORCE_FREEZE | syscal1) && !INHIBIT_FREEZE);
      
 always @(posedge CLK or negedge RESET) begin
     if(!RESET) begin
@@ -313,7 +308,7 @@ always @(posedge CLK or negedge RESET) begin
             end*/
             if(comment1) begin
                 $display("ID1:Instr=%x,Instr_PC=%x,Req_Alt_PC=%d:Alt_PC=%x;SYS=%d(%d)",Instr1_IN,Instr_PC_IN,Request_Alt_PC1,Alt_PC1,syscal1,syscall_bubble_counter);
-                $display("ID1: FWD_ALU_RESULT_IN = %x, FWD_MEMWB = %x", Fwd_ALU_Result_IN, Fwd_MEM_WriteData_IN);
+                $display("ID1: FWD_ALU_RESULT_IN = %x, FWD_MEMWB = %x, FWD_WB = %x, FWD_CTL = %b", Fwd_ALU_Result_IN, Fwd_MEM_WriteData_IN, Fwd_MEMWB_WriteData_IN, Fwd2Cmp_opA_ctl);
                 //$display("ID1:A:Reg[%d]=%x; B:Reg[%d]=%x; Write?%d to %d",RegA1, OpA1, RegB1, OpB1, (WriteRegister1!=5'd0)?RegWrite1:1'd0, WriteRegister1);
                 //$display("ID1:ALU_Control=%x; MemRead=%d; MemWrite=%d (%x); ShiftAmount=%d",ALU_control1, MemRead1, MemWrite1, MemWriteData1, shiftAmount1);
             end
