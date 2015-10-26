@@ -1,0 +1,18 @@
+ForwardLogic module
+
+The ForwardLogic module keeps track of which registers are written to by recent instructions that were flagged by the decoder as instructions that write to registers. It compares the source register addresses of the current instruction to destination register addresses of the previous three instructions and if it finds a match, it will send out the corresponding forwarding signal.
+
+Data is being forwarded from three different locations in the pipeline:
+    1) output of the EXE stage
+    2) data loaded from memory in the MEM stage asynchronously, as soon as it is available after byte selection
+    3) data to be written to the register from the output of the MEM module (this is to avoid having to implement a two phase clock for the pipeline so that register write and read would take place at different phases of a single clock cycle)
+
+If one of the source register addresses of an instruction matches the 1st destination register address in PipelineRegHistory, the result from the ALU must be forwarded to this instruction. If the source register matches the 2nd address, the result must come from MEM stage and if the 3rd address is a match, the result must be forwarded from the MEM/WB stage.
+
+Data is forwarded to:
+    1) Both operands of the branch compare unit in the ID stage
+    2) Both operands of the ALU
+    3) MemWriteData1 in the EXE stage which is passed through into MEM stage for store instructions to write into memory
+
+The ID and EXE modules have muxes that select whether to use input data from the regular pipeline path or the forwarded data according to the 3 bit signal sent by the ForwardLogic. The 3 bits signify the locations were the data is to be forwarded from, whenever multiple flags are set to 1, the most recent data is always used.
+The branch compare unit needs to get the forwarded data asynchronously, meaning from before the pipeline latch since the compare takes place during the same cycle the result is produced in.

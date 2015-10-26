@@ -1,0 +1,8 @@
+Issue: Register writes do not occur
+
+At each clock cycle, the ID stage receives 3 signals from the MEM stages required for register writes, which it then passes on to the RegFile module:
+    1) A 1-bit signal (Write1) whether the instruction needs to update the register file or not
+    2) A 5-bit signal (WriteReg1) containing the address of the register that is written to
+    3) The 32-bits of data (WriteData1) that are supposed to go into the register
+
+The problem was, the RegFile module was not updating the registers. To fix this, at the positive edge of CLK, if Write1 is 1, WriteData1 is assigned to the register with the address WriteReg1 (Reg[WriteReg1]). 

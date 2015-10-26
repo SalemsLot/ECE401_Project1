@@ -1,0 +1,10 @@
+Issue: The PC does not get updated
+
+There were two problems:
+    1) Instr_PC_Plus4 was not getting updated
+    2) In case of a taken branch, the new calculated instruction address was not assigned to the output Instr_address_2IM used to fetch the next instruction from instruction memory.
+
+To fix this, Instr_PC_Plus 4 is always set to the address of the current fetched instruction + 4 and Instr_address_2IM is continuosly assigned to be either Alt_PC or Instr_PC_Plus4 depending on the value of Request_Alt_PC.
+If there are no branches, Request_Alt_PC is zero and the next instruction address sent to instruction memory is just current address + 4.
+If instruction N is a branch, at the next clock cycle as instruction N moves into the ID stage, Request_Alt_PC still remains zero because the branch hasn't been decoded yet. The IF stage fetches the N+4 instruction and increments Instr_PC_Plus4 to N+8. At the same time in the ID stage, NextInstructionCalculator provides the value of Alt_PC and Request_Alt_PC is updated to 0 or 1 depending on whether the branch is taken or not.
+Therefore the instruction immediately following the branch instruction will always be executed (the branch delay slot).

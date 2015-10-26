@@ -1,0 +1,14 @@
+Issue: Memory reads and writes do not work properly
+
+The MEM module uses the address calculated by the ALU (ALU_result) to access the data memory. (This address may need to be modified if the instruction is a store that writes to an address which is not word-aligned). Depending on whether the instruction is a load or store, it then reads the word in that address from the data memory (data_read_fDM is updated) or it writes a specified number of bytes (data_write_size_2DM) to that address.
+
+Load instructions then update data_read_aligned and send it to the ID stage to be written into the proper register. The value of ALU_Control is used to determine what needs to be assigned to data_read_aligned:
+    1) LWL and LWR instructions select some bytes from the full word read from memory and some bytes from the existing data in the register (MemoryData1 which is passed to MEM from the earlier stages of the pipeline).
+    2) Instructions that load a byte or half word, take the least significant bytes from data_read_fDM and depending on the instruction either sign- or zero-extend it.
+    3) Instructions that load a full word take the entire data_read_fDM and assign it to data_read_aligned.
+    
+Store instructions update data_write_size_2DM and data_write_2DM and send them to data memory (handled by the simulator). The bytes that are written to memory are selected from MemoryData1 which is passed to MEM from the earlier stages.
+When the instruction stores less than a full word, the least significant bytes are selected from MemoryData1. In this implementation, these bytes are then zero-extended and sent to data_write_2DM, the simulator then converts the 4-byte number to the appropriate size based on data_write_size_2DM, so we could have just sent MemoryData1 in all cases, however I think this makes debugging a little easier because when the conversion in the simulator happened in an unexpected way, you would at least see zeros in memory rather than random junk.
+In most cases the instruction can use ALU_result directly as the address to write to (which may or may not be word-aligned), however SWR requires that the address to write to be word-aligned (for big-endian).
+
+Any time when there is a difference between little-endian and big-endian (e.g., LWL and LWR), the big-endian version is implemented.
