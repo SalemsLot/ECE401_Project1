@@ -53,7 +53,8 @@ module MEM(
 	 output MemRead_2DM,
 	 output MemWrite_2DM,
 
-    output [31:0] WriteData_async_OUT
+    output [31:0] WriteData_async_OUT,
+    input Fwd2MEM_LWLR_ctl
 
     );
 	 
@@ -65,6 +66,7 @@ module MEM(
 	 wire [31:0] MemoryData1;	//Used for LWL, LWR (existing content in register) and for writing (data to write)
 	 wire [31:0] MemoryData;
 	 //wire [31:0] MemoryReadData;	//Data read in from memory (and merged appropriate if LWL, LWR)
+         wire [31:0] LWLRData;
 	 reg [31:0]	 data_read_aligned;
 	 
 	 //Word-aligned address for reads
@@ -84,6 +86,7 @@ module MEM(
     assign ALU_result = ALU_result1_IN;
     assign ALU_Control = ALU_Control1_IN;
     assign MemoryData = MemoryData1;
+    assign LWLRData = Fwd2MEM_LWLR_ctl ? WriteData1_OUT : MemoryData1;
  
 	 assign MemReadAddress = {ALU_result[31:2],2'b00};
 	 
@@ -110,17 +113,17 @@ always @(data_read_fDM) begin
             //LWL
                     case(ALU_result[1:0])
                         2'b00: data_read_aligned = data_read_fDM;
-                        2'b01: data_read_aligned = {data_read_fDM[23: 0],MemoryData1[ 7: 0]};
-                        2'b10: data_read_aligned = {data_read_fDM[15: 0],MemoryData1[15: 0]};
-                        2'b11: data_read_aligned = {data_read_fDM[ 7: 0],MemoryData1[23: 0]};
+                        2'b01: data_read_aligned = {data_read_fDM[23: 0],LWLRData[ 7: 0]};
+                        2'b10: data_read_aligned = {data_read_fDM[15: 0],LWLRData[15: 0]};
+                        2'b11: data_read_aligned = {data_read_fDM[ 7: 0],LWLRData[23: 0]};
                     endcase
 		end
 		6'b101110: begin
             //LWR
                     case(ALU_result[1:0])
-                        2'b00: data_read_aligned = {MemoryData1[31: 8],data_read_fDM[31:24]};
-                        2'b01: data_read_aligned = {MemoryData1[31:16],data_read_fDM[31:16]};
-                        2'b10: data_read_aligned = {MemoryData1[31:24],data_read_fDM[31: 8]};
+                        2'b00: data_read_aligned = {LWLRData[31: 8],data_read_fDM[31:24]};
+                        2'b01: data_read_aligned = {LWLRData[31:16],data_read_fDM[31:16]};
+                        2'b10: data_read_aligned = {LWLRData[31:24],data_read_fDM[31: 8]};
                         2'b11: data_read_aligned = data_read_fDM;
                     endcase
 		end

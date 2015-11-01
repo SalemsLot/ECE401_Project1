@@ -26,6 +26,7 @@ module ForwardLogic(
        output reg [ 2:0] Fwd2ALU_MemWrite_ctl,     //Forward to ALU MemWriteData
        output reg [ 2:0] Fwd2Cmp_opA_ctl,          //Forward to branch compare opA or jump register
        output reg [ 2:0] Fwd2Cmp_opB_ctl,          //Forward to branch compare opB
+       output reg        Fwd2MEM_LWLR_ctl,
 
        input             RegWrite,                 //This instruction writes to a register
        input             RegDest,                  //This instruction uses the RegDest register (Instr[15:11])
@@ -44,6 +45,8 @@ module ForwardLogic(
        wire [2:0] Fwd2ALU_opA_ctl1;        // Forward to ALU operand A - First bit: Forward from MEM, Second bit: Forward from EXE
        wire [2:0] Fwd2ALU_opB_ctl1;        // Forward to ALU operand B - First bit: Forward from MEM, Second bit: Forward from EXE
        wire [2:0] Fwd2ALU_MemWrite_ctl1;   // Forward to ALU MemWriteData - First bit: Forward from MEM, Second bit: Forward from EXE
+       wire       Fwd2MEM_LWLR_ctl1;
+       wire       Fwd2MEM_LWLR_ctl2;
        //Calculate the destination register for the current instruction
        assign CurrentDestReg = (RegWrite) ?  (RegDest? Instr[15:11]:Instr[20:16]): 5'b0;
 
@@ -51,7 +54,6 @@ module ForwardLogic(
        assign CurrentSrcRegrs = Instr[25:21]; 
        assign CurrentSrcRegrt = (RegDest)?Instr[20:16]:5'b0; 
        assign CurrentSrcRegMem = (MemWrite)?Instr[20:16]:5'b0;
-       //assign CurrentSrcRegMem = (MemWrite || (RegWrite && !RegDest))?Instr[20:16]:5'b0;
 
        //We treat 'zero' entries as by-pass ignore for when there aren't any reg write
        // If the current destination register matches any value in the Pipeline History the we check the next condition, else we don't by-pass
@@ -77,7 +79,8 @@ module ForwardLogic(
        assign Fwd2Cmp_opB_ctl[1] = (PipelineRegHistory[1] == 0) ? 1'b0 : (PipelineRegHistory[1] == CurrentSrcRegrt ) ? 1'b1 : 1'b0;
        assign Fwd2Cmp_opB_ctl[2] = (PipelineRegHistory[2] == 0) ? 1'b0 : (PipelineRegHistory[2] == CurrentSrcRegrt ) ? 1'b1 : 1'b0;
 
-       //TODO: Add forwarding for LWL/LWR case
+       //Forwarding for LWL/LWR case
+       assign Fwd2MEM_LWLR_ctl2 = (PipelineRegHistory[0] == 0) ? 1'b0 : (PipelineRegHistory[0] == CurrentDestReg ) ? 1'b1 : 1'b0;
 
        always @ (posedge CLK or negedge RESET)
          begin
@@ -93,6 +96,8 @@ module ForwardLogic(
            Fwd2ALU_opA_ctl <= Fwd2ALU_opA_ctl1;
            Fwd2ALU_opB_ctl <= Fwd2ALU_opB_ctl1;
            Fwd2ALU_MemWrite_ctl <= Fwd2ALU_MemWrite_ctl1;
+           Fwd2MEM_LWLR_ctl1 <= Fwd2MEM_LWLR_ctl2;
+           Fwd2MEM_LWLR_ctl <= Fwd2MEM_LWLR_ctl1;
            /****/
            PipelineRegHistory[0] <= CurrentDestReg;
            PipelineRegHistory[1] <= PipelineRegHistory[0];

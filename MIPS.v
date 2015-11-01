@@ -194,6 +194,7 @@ module MIPS (
        .Fwd2ALU_MemWrite_ctl(Fwd2ALU_MemWrite_ctl),
        .Fwd2Cmp_opA_ctl(Fwd2Cmp_opA_ctl),
        .Fwd2Cmp_opB_ctl(Fwd2Cmp_opB_ctl),
+       .Fwd2MEM_LWLR_ctl(Fwd2MEM_LWLR_ctl),
        .RegWrite(RegWrite1_ID_async),            
        .RegDest(RegDest1_ID_async),
        .MemWrite(MemWrite1_ID_async),
@@ -273,6 +274,7 @@ module MIPS (
     /*verilator lint_on UNUSED*/
     assign unused_d1 = block_read_fDM_valid;
     assign unused_d2 = block_write_fDM_valid;
+    wire Fwd2MEM_LWLR_ctl;
      
     MEM MEM(
         .CLK(CLK),
@@ -295,7 +297,8 @@ module MIPS (
         .data_read_fDM(data_read_fDC),
         .MemRead_2DM(read_2DC),
         .MemWrite_2DM(write_2DC),
-        .WriteData_async_OUT(MEM_WriteData_async)
+        .WriteData_async_OUT(MEM_WriteData_async),
+        .Fwd2MEM_LWLR_ctl(Fwd2MEM_LWLR_ctl)
     );
      
     
